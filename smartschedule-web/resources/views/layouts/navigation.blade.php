@@ -33,6 +33,52 @@
                     Calendrier
                 </a>
             </div>
+            
+            <div class="flex items-center gap-4">
+                <!-- Notifications Bell -->
+                <div x-data="{ 
+                    open: false, 
+                    count: {{ Auth::user()->unreadNotifications->count() }},
+                    init() {
+                        // Vérifie les nouvelles notifications toutes les 30 secondes
+                        setInterval(() => {
+                            fetch('/web-api/notifications')
+                                .then(r => r.json())
+                                .then(data => {
+                                    this.count = data.filter(n => n.read_at === null).length;
+                                });
+                        }, 30000);
+                    }
+                }" class="relative">
+                    <button @click="open = !open" class="flex items-center text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out relative" style="background:none;border:none;cursor:pointer;padding:8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <template x-if="count > 0">
+                            <span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                                <span x-text="count"></span>
+                            </span>
+                        </template>
+                    </button>
+
+                    <!-- Dropdown Content (Simple implementation) -->
+                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-2 overflow-hidden" style="display:none;">
+                        <div class="p-3 border-bottom border-gray-50 flex justify-between items-center">
+                            <span class="font-bold text-sm">Notifications</span>
+                            <button @click="fetch('/web-api/notifications/mark-read', {method:'POST', headers:{'X-CSRF-TOKEN': '{{ csrf_token() }}'}}).then(() => count = 0)" class="text-[11px] text-blue-600 hover:underline">Tout marquer comme lu</button>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto">
+                            @forelse(Auth::user()->unreadNotifications as $notification)
+                                <div class="p-3 hover:bg-gray-50 rounded-lg transition-colors border-bottom border-gray-50 last:border-0">
+                                    <p class="text-xs font-semibold text-gray-900">{{ $notification->data['message'] }}</p>
+                                    <p class="text-[10px] text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                                </div>
+                            @empty
+                                <div class="p-6 text-center text-gray-400 text-xs">
+                                    Aucune nouvelle notification
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
 
             <!-- User Menu -->
             <div class="hidden sm:flex items-center gap-3">

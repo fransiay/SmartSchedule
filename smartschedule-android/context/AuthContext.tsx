@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import api from '../api/axios';
 
 /*
@@ -57,6 +59,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    /**
+     * Demande la permission et récupère le token de notification Expo.
+     */
+    const registerForPushNotificationsAsync = async () => {
+        let token;
+        
+        if (Platform.OS === 'android') {
+            await Notifications.setNotificationChannelAsync('default', {
+                name: 'default',
+                importance: Notifications.AndroidImportance.MAX,
+                vibrationPattern: [0, 250, 250, 250],
+                lightColor: '#FF231F7C',
+            });
+        }
+
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync();
+            finalStatus = status;
+        }
+        
+        if (finalStatus !== 'granted') {
+            console.log('Failed to get push token for push notification!');
+            return;
+        }
+
+        token = (await Notifications.getExpoPushTokenAsync({
+            projectId: 'your-project-id' // À remplacer par le vrai ID ou laisser vide si configuré dans app.json
+        })).data;
+
+        return token;
+    };
+
     // Vérification du token au premier chargement de l'application
     useEffect(() => {
         checkToken();
@@ -69,6 +105,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const login = async (token: string, userData: any) => {
         await SecureStore.setItemAsync('userToken', token); // Stockage sécurisé du token
         setUser(userData);
+
+        // Enregistrement du token de notification après la connexion
+        try {
+            const pushToken = await registerForPushNotificationsAsync();
+            if (pushToken) {
+                await api.post('/user/push-token', { token: pushToken });
+            }
+        } catch (error) {
+            console.error('Error registering push token:', error);
+        }
     };
 
     /**

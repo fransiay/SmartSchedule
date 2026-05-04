@@ -79,6 +79,15 @@ Route::middleware(['auth'])->group(function () {
         // ---- Planning ----
         Route::get('/schedule',           [\App\Http\Controllers\Api\ScheduleController::class, 'index']);
         Route::post('/schedule/generate', [\App\Http\Controllers\Api\ScheduleController::class, 'generate']);
+
+        // ---- Notifications ----
+        Route::get('/notifications', function (Request $request) {
+            return $request->user()->notifications()->take(10)->get();
+        });
+        Route::post('/notifications/mark-read', function (Request $request) {
+            $request->user()->unreadNotifications->markAsRead();
+            return response()->json(['success' => true]);
+        });
     });
 });
 

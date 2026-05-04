@@ -36,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---- Profil utilisateur ----
     Route::get('/user',  [AuthController::class, 'profile']);       // Récupérer son profil
     Route::put('/user',  [AuthController::class, 'updateProfile']); // Modifier nom / durée de pause
+    Route::post('/user/push-token', [AuthController::class, 'updatePushToken']); // Enregistrer le token Expo
     Route::post('/logout', [AuthController::class, 'logout']);       // Déconnexion (supprime le token)
 
     // ---- Tâches (CRUD complet) ----

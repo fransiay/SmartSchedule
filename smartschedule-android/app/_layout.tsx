@@ -3,8 +3,17 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useContext } from 'react';
 import 'react-native-reanimated';
+import * as Notifications from 'expo-notifications';
 import { AuthProvider, AuthContext } from '../context/AuthContext';
 import { useColorScheme } from '../hooks/use-color-scheme';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();

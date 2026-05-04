@@ -125,4 +125,21 @@ class AuthController extends Controller
             'user'    => $user
         ]);
     }
+
+    /**
+     * Met à jour le token de notification Expo pour l'utilisateur.
+     * Permet d'envoyer des notifications Push sur son téléphone.
+     */
+    public function updatePushToken(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        $request->user()->update([
+            'expo_push_token' => $request->token
+        ]);
+
+        return response()->json(['message' => 'Push token updated successfully']);
+    }
 }
