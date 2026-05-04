@@ -12,14 +12,33 @@ export default function LoginScreen() {
     const { login } = useContext(AuthContext);
     const router = useRouter();
 
+    const [errorMessage, setErrorMessage] = useState('');
+
     const handleLogin = async () => {
         if (!email || !password) return;
         setLoading(true);
+        setErrorMessage('');
         try {
             const response = await api.post('/login', { email, password });
             await login(response.data.access_token, response.data.user);
-        } catch (error) {
-            alert('Erreur de connexion, vérifiez vos identifiants.');
+        } catch (error: any) {
+            if (error.response) {
+                // Le serveur a répondu avec une erreur (401, 422, etc.)
+                const data = error.response.data;
+                if (error.response.status === 401) {
+                    setErrorMessage('Email ou mot de passe incorrect.');
+                } else if (data?.errors) {
+                    const firstError = Object.values(data.errors)[0] as string[];
+                    setErrorMessage(firstError[0]);
+                } else if (data?.message) {
+                    setErrorMessage(data.message);
+                } else {
+                    setErrorMessage('Erreur lors de la connexion.');
+                }
+            } else {
+                // Pas de réponse = problème réseau
+                setErrorMessage('Impossible de contacter le serveur. Vérifiez votre connexion WiFi.');
+            }
         } finally {
             setLoading(false);
         }
@@ -39,6 +58,13 @@ export default function LoginScreen() {
                     <Text style={styles.title}>Bon retour</Text>
                     <Text style={styles.subtitle}>Connectez-vous pour accéder à votre planning intelligent.</Text>
                     
+                    {errorMessage ? (
+                        <View style={styles.errorBox}>
+                            <Ionicons name="alert-circle" size={18} color="#E11D48" />
+                            <Text style={styles.errorText}>{errorMessage}</Text>
+                        </View>
+                    ) : null}
+
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>ADRESSE EMAIL</Text>
@@ -89,6 +115,18 @@ const styles = StyleSheet.create({
     title: { fontSize: 28, fontWeight: '800', color: '#0F0F10', marginBottom: 8, textAlign: 'center', letterSpacing: -0.5 },
     subtitle: { fontSize: 15, color: '#6C6C70', marginBottom: 32, textAlign: 'center', lineHeight: 22 },
     form: { gap: 20 },
+    errorBox: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: 8, 
+        backgroundColor: '#FFF1F2', 
+        padding: 12, 
+        borderRadius: 10, 
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#FECDD3'
+    },
+    errorText: { color: '#E11D48', fontSize: 14, fontWeight: '600', flex: 1 },
     inputGroup: { gap: 8 },
     label: { fontSize: 11, fontWeight: '700', color: '#6C6C70', letterSpacing: 1 },
     input: { 

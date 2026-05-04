@@ -10,28 +10,49 @@ use App\Http\Controllers\Api\ScheduleController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| Routes API — SmartSchedule (Application Mobile Android)
 |--------------------------------------------------------------------------
+|
+| Ces routes retournent du JSON et sont consommées par l'application mobile
+| React Native / Expo via des requêtes HTTP avec le token Bearer Sanctum.
+|
+| Routes publiques : /api/login et /api/register (pas besoin d'être connecté)
+| Routes protégées : toutes les autres (middleware auth:sanctum requis)
+|
 */
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
+// ────────────────────────────────────────────────
+// Routes publiques (sans authentification)
+// ────────────────────────────────────────────────
+Route::post('/login',    [AuthController::class, 'login']);    // Connexion → retourne un token Bearer
+Route::post('/register', [AuthController::class, 'register']); // Inscription → retourne un token Bearer
 
+// ────────────────────────────────────────────────
+// Routes protégées (token Bearer Sanctum requis dans le header)
+// Header attendu : Authorization: Bearer {token}
+// ────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', [AuthController::class, 'profile']);
-    Route::put('/user', [AuthController::class, 'updateProfile']);
-    Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Tasks API
+    // ---- Profil utilisateur ----
+    Route::get('/user',  [AuthController::class, 'profile']);       // Récupérer son profil
+    Route::put('/user',  [AuthController::class, 'updateProfile']); // Modifier nom / durée de pause
+    Route::post('/logout', [AuthController::class, 'logout']);       // Déconnexion (supprime le token)
+
+    // ---- Tâches (CRUD complet) ----
+    // GET    /api/tasks         → liste des tâches
+    // POST   /api/tasks         → créer une tâche
+    // GET    /api/tasks/{id}    → détail d'une tâche
+    // PUT    /api/tasks/{id}    → modifier une tâche
+    // DELETE /api/tasks/{id}    → supprimer une tâche
     Route::apiResource('tasks', TaskController::class);
 
-    // Categories API
+    // ---- Catégories (CRUD complet) ----
     Route::apiResource('categories', CategoryController::class);
 
-    // Availabilities API
+    // ---- Disponibilités (CRUD complet) ----
     Route::apiResource('availabilities', AvailabilityController::class);
 
-    // Scheduling APIs
-    Route::post('/schedule/generate', [ScheduleController::class, 'generate']);
-    Route::get('/schedule', [ScheduleController::class, 'index']);
+    // ---- Planning ----
+    Route::post('/schedule/generate', [ScheduleController::class, 'generate']); // Générer le planning
+    Route::get('/schedule',           [ScheduleController::class, 'index']);     // Récupérer le planning
 });
