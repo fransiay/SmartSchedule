@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'preferred_hours', // Heures de travail préférées par jour
         'break_duration',  // Durée de pause entre tâches (en minutes)
+        'expo_push_token', // Token pour les notifications push mobile
     ];
 
     /**

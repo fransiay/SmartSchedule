@@ -86,9 +86,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
 
-        token = (await Notifications.getExpoPushTokenAsync({
-            projectId: 'your-project-id' // À remplacer par le vrai ID ou laisser vide si configuré dans app.json
-        })).data;
+        // Le projectId est requis pour les notifications push Expo (EAS)
+        // On essaie de le récupérer depuis la config ou on utilise une chaîne vide
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.expoConfig?.slug;
+
+        try {
+            token = (await Notifications.getExpoPushTokenAsync({
+                projectId: projectId
+            })).data;
+        } catch (e) {
+            console.warn('Failed to get push token:', e);
+        }
 
         return token;
     };

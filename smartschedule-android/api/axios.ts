@@ -16,21 +16,18 @@ import Constants from 'expo-constants';
 // Expo expose l'IP de la machine de développement via expoConfig.hostUri.
 // On extrait l'IP pour construire l'URL de l'API dynamiquement.
 const debuggerHost = Constants.expoConfig?.hostUri;
-let ipAddress = '192.168.1.225'; // IP de la machine hôte (mise à jour automatiquement)
+let ipAddress = 'localhost'; // Par défaut
 
 if (debuggerHost) {
-  const host = debuggerHost.split(':')[0]; // Exemple : "192.168.1.10:8081" → "192.168.1.10"
-  // Si l'hôte est localhost ou 127.0.0.1, on garde l'IP de secours car Android ne peut pas atteindre l'hôte via localhost
-  if (host !== 'localhost' && host !== '127.0.0.1') {
-    ipAddress = host;
-  } else if (Platform.OS === 'android') {
-    // Sur émulateur Android, 10.0.2.2 pointe vers le localhost de l'ordinateur
-    ipAddress = '10.0.2.2';
-  }
+  ipAddress = debuggerHost.split(':')[0]; 
 }
 
-// On utilise l'IP de la machine pour toutes les plateformes (Android, iOS, Web)
-// car 'localhost' ne fonctionne pas sur les appareils physiques.
+// Sur Android, 'localhost' ne fonctionne pas pour pointer vers la machine hôte
+// On utilise 10.0.2.2 qui est l'alias spécial pour l'ordinateur de dev
+if (Platform.OS === 'android' && (ipAddress === 'localhost' || ipAddress === '127.0.0.1')) {
+  ipAddress = '10.0.2.2';
+}
+
 const baseURL = `http://${ipAddress}:8000/api`;
 
 console.log('Attempting to connect to API at:', baseURL);

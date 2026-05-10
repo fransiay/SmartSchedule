@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\AvailabilityController;
 use App\Http\Controllers\Api\ScheduleController;
+use App\Http\Controllers\Api\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,4 +57,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---- Planning ----
     Route::post('/schedule/generate', [ScheduleController::class, 'generate']); // Générer le planning
     Route::get('/schedule',           [ScheduleController::class, 'index']);     // Récupérer le planning
+
+    // ---- Notifications ----
+    Route::get('/notifications',           [NotificationController::class, 'index']);      // Liste des notifications
+    Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead']); // Marquer comme lu
 });
