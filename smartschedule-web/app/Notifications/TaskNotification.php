@@ -15,15 +15,17 @@ class TaskNotification extends Notification
     protected $task;
     protected $message;
     protected $type;
+    protected $reminderType;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($task, $message, $type = 'info')
+    public function __construct($task, $message, $type = 'info', $reminderType = null)
     {
         $this->task = $task;
         $this->message = $message;
         $this->type = $type;
+        $this->reminderType = $reminderType;
     }
 
     /**
@@ -71,12 +73,18 @@ class TaskNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
-        return [
+        $data = [
             'task_id' => $this->task->id,
             'title'   => $this->task->title,
             'message' => $this->message,
             'type'    => $this->type, // info, success, warning, error
             'action'  => '/tasks',
         ];
+
+        if ($this->reminderType) {
+            $data['reminder_type'] = $this->reminderType;
+        }
+
+        return $data;
     }
 }

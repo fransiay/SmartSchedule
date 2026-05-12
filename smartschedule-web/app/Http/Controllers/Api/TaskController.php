@@ -22,7 +22,7 @@ class TaskController extends Controller
     public function index(Request $request)
     {
         return response()->json(
-            $request->user()->tasks()->with('category')->get()
+            $request->user()->tasks()->with(['category', 'attachments'])->whereNull('parent_task_id')->get()
         );
     }
 
@@ -38,20 +38,25 @@ class TaskController extends Controller
     {
         // Validation des données envoyées
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'title'            => 'required|string|max:255',
+            'description'      => 'nullable|string',
             'duration_minutes' => 'required|integer|min:1',
-            'priority' => 'required|integer|min:1|max:5',
-            'deadline' => 'required|date',
-            'modifier' => 'nullable|string',
-            'category_id' => [
+            'priority'         => 'required|integer|min:1|max:5',
+            'deadline'         => 'required|date',
+            'modifier'         => 'nullable|string',
+            'category_id'      => [
                 'nullable',
-                // Vérifie que la catégorie appartient bien à l'utilisateur connecté
                 \Illuminate\Validation\Rule::exists('categories', 'id')->where(function ($query) use ($request) {
                     $query->where('user_id', $request->user()->id);
                 }),
             ],
-            'status' => 'required|string|in:todo,in_progress,done',
+            'status'           => 'required|string|in:todo,in_progress,done',
+            // Champs récurrence
+            'is_recurring'     => 'boolean',
+            'recurrence_type'  => 'nullable|required_if:is_recurring,true|in:daily,weekly,monthly',
+            'recurrence_days'  => 'nullable|array',
+            'recurrence_days.*'=> 'integer|min:0|max:6',
+            'recurrence_end'   => 'nullable|date|after:deadline',
         ]);
 
         // Création de la tâche liée à l'utilisateur
@@ -89,18 +94,24 @@ class TaskController extends Controller
 
         // Validation partielle (seuls les champs envoyés sont validés)
         $validated = $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
+            'title'            => 'sometimes|required|string|max:255',
+            'description'      => 'nullable|string',
             'duration_minutes' => 'sometimes|required|integer|min:1',
-            'priority' => 'sometimes|required|integer|min:1|max:5',
-            'deadline' => 'sometimes|required|date',
-            'category_id' => [
+            'priority'         => 'sometimes|required|integer|min:1|max:5',
+            'deadline'         => 'sometimes|required|date',
+            'category_id'      => [
                 'nullable',
                 \Illuminate\Validation\Rule::exists('categories', 'id')->where(function ($query) use ($request) {
                     $query->where('user_id', $request->user()->id);
                 }),
             ],
-            'status' => 'sometimes|required|string|in:todo,in_progress,done',
+            'status'           => 'sometimes|required|string|in:todo,in_progress,done',
+            // Champs récurrence
+            'is_recurring'     => 'boolean',
+            'recurrence_type'  => 'nullable|in:daily,weekly,monthly',
+            'recurrence_days'  => 'nullable|array',
+            'recurrence_days.*'=> 'integer|min:0|max:6',
+            'recurrence_end'   => 'nullable|date',
         ]);
 
         $oldStatus = $task->status;

@@ -32,67 +32,93 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     Calendrier
                 </a>
+                <a href="{{ route('analytics') }}" class="nav-link {{ request()->routeIs('analytics') ? 'active' : '' }}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    Analytics
+                </a>
             </div>
             
             <div class="flex items-center gap-4">
                 <!-- Notifications Bell -->
-                <div x-data="{ 
-                    open: false, 
-                    count: {{ Auth::user()->unreadNotifications->count() }},
-                    init() {
-                        // Vérifie les nouvelles notifications toutes les 30 secondes
-                        setInterval(() => {
-                            fetch('/web-api/notifications')
-                                .then(r => r.json())
-                                .then(data => {
-                                    this.count = data.filter(n => n.read_at === null).length;
-                                });
-                        }, 30000);
-                    }
-                }" class="relative">
-                    <button @click="open = !open" class="flex items-center text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out relative" style="background:none;border:none;cursor:pointer;padding:8px;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <div x-data="notifController()" class="relative">
+                    <button @click="toggle()" class="relative flex items-center justify-center w-9 h-9 rounded-xl hover:bg-gray-100 transition-all" style="background:none;border:none;cursor:pointer;color:#6c6c70;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         <template x-if="count > 0">
-                            <span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                                <span x-text="count"></span>
-                            </span>
+                            <span x-text="count > 9 ? '9+' : count" style="position:absolute;top:0;right:0;min-width:16px;height:16px;padding:0 4px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#e11d48;color:#fff;font-size:9px;font-weight:800;line-height:1;"></span>
                         </template>
                     </button>
 
-                    <!-- Dropdown Content (Simple implementation) -->
-                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 p-2 overflow-hidden" style="display:none;">
-                        <div class="p-3 border-bottom border-gray-50 flex justify-between items-center">
-                            <span class="font-bold text-sm">Notifications</span>
-                            <button @click="fetch('/web-api/notifications/mark-read', {method:'POST', headers:{'X-CSRF-TOKEN': '{{ csrf_token() }}'}}).then(() => count = 0)" class="text-[11px] text-blue-600 hover:underline">Tout marquer comme lu</button>
+                    <!-- Dropdown -->
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.away="open = false" style="display:none;position:absolute;right:0;margin-top:8px;width:370px;z-index:50;background:#ffffff;border:1px solid #e5e5e7;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.12);overflow:hidden;">
+
+                        <!-- Header -->
+                        <div style="padding:14px 16px;border-bottom:1px solid #f2f2f3;display:flex;align-items:center;justify-content:space-between;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:0.875rem;font-weight:800;color:#0f0f10;">Notifications</span>
+                                <template x-if="count > 0"><span x-text="count" style="font-size:10px;font-weight:800;background:#fee2e2;color:#e11d48;padding:2px 7px;border-radius:20px;"></span></template>
+                            </div>
+                            <button x-show="count > 0" @click="markAllRead()" style="font-size:11px;font-weight:700;color:#3b82f6;background:none;border:none;cursor:pointer;padding:4px 10px;border-radius:6px;transition:background 0.15s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">Tout lire</button>
                         </div>
-                        <div class="max-h-64 overflow-y-auto">
-                            @forelse(Auth::user()->unreadNotifications as $notification)
-                                <div class="p-3 hover:bg-gray-50 rounded-lg transition-colors border-bottom border-gray-50 last:border-0">
-                                    <p class="text-xs font-semibold text-gray-900">{{ $notification->data['message'] }}</p>
-                                    <p class="text-[10px] text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+
+                        <!-- List -->
+                        <div style="max-height:380px;overflow-y:auto;">
+                            <template x-if="loading">
+                                <div style="padding:32px;text-align:center;color:#aeaeb2;font-size:13px;">Chargement...</div>
+                            </template>
+                            <template x-if="!loading && notifications.length === 0">
+                                <div style="padding:40px 24px;text-align:center;">
+                                    <div style="width:44px;height:44px;background:#f7f7f8;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d1d1d6" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                    </div>
+                                    <p style="font-size:13px;font-weight:700;color:#0f0f10;margin:0 0 4px;">Tout est à jour !</p>
+                                    <p style="font-size:12px;color:#aeaeb2;margin:0;">Aucune notification pour le moment.</p>
                                 </div>
-                            @empty
-                                <div class="p-6 text-center text-gray-400 text-xs">
-                                    Aucune nouvelle notification
+                            </template>
+                            <template x-if="!loading && notifications.length > 0">
+                                <div>
+                                    <template x-for="n in notifications" :key="n.id">
+                                        <a :href="n.data?.action || '/tasks'" @click.prevent="handleClick(n)" style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer;border-bottom:1px solid #f7f7f8;transition:background 0.15s;text-decoration:none;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+                                            <div :style="'background:' + typeColor(n.data?.type, 0.1) + ';color:' + typeColor(n.data?.type, 1)" style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                <span x-text="typeEmoji(n.data?.type)" style="font-size:16px;"></span>
+                                            </div>
+                                            <div style="flex:1;min-width:0;">
+                                                <p x-text="n.data?.message || 'Notification'" :style="!n.read_at ? 'font-weight:700;color:#0f0f10;' : 'font-weight:500;color:#6c6c70;'" style="font-size:13px;margin:0 0 4px;line-height:1.4;"></p>
+                                                <div style="display:flex;align-items:center;gap:6px;">
+                                                    <span x-text="timeAgo(n.created_at)" style="font-size:11px;color:#aeaeb2;font-weight:500;"></span>
+                                                    <span style="font-size:10px;font-weight:700;color:#3b82f6;">→ Voir</span>
+                                                </div>
+                                            </div>
+                                            <div x-show="!n.read_at" style="width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0;margin-top:6px;"></div>
+                                        </a>
+                                    </template>
                                 </div>
-                            @endforelse
+                            </template>
+                        </div>
+
+                        <!-- Footer -->
+                        <div style="padding:10px 16px;border-top:1px solid #f2f2f3;text-align:center;">
+                            <a href="{{ route('tasks') }}" style="font-size:11px;font-weight:700;color:#6c6c70;text-decoration:none;text-transform:uppercase;letter-spacing:0.05em;" onmouseover="this.style.color='#0f0f10'" onmouseout="this.style.color='#6c6c70'">Voir toutes les tâches</a>
                         </div>
                     </div>
                 </div>
 
             <!-- User Menu -->
-            <div class="hidden sm:flex items-center gap-3">
-                <div class="flex items-center gap-2" style="color:#6c6c70;font-size:0.85rem;">
-                    <div style="width:30px;height:30px;border-radius:50%;background:#0f0f10;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;color:white;">
+            <div class="hidden sm:flex items-center gap-4">
+                <div class="flex items-center gap-2.5 pl-4 border-l border-gray-100">
+                    <div class="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center font-bold text-[11px] text-white shadow-sm ring-2 ring-white">
                         {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                     </div>
-                    <span style="color:#3a3a3c;font-weight:500;">{{ Auth::user()->name }}</span>
+                    <div class="flex flex-col">
+                        <span class="text-[13px] font-bold text-gray-900 leading-none">{{ Auth::user()->name }}</span>
+                        <span class="text-[10px] font-medium text-gray-400 mt-0.5">Membre</span>
+                    </div>
                 </div>
+                
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="btn-danger" style="font-size:0.8rem;padding:6px 14px;">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                        Déconnexion
+                    <button type="submit" class="group flex items-center gap-2 px-3 py-2 rounded-xl text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="group-hover:rotate-12 transition-transform"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        <span class="text-[12px] font-bold">Quitter</span>
                     </button>
                 </form>
             </div>

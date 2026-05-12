@@ -12,7 +12,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Vérifie les échéances des tâches 2 fois par jour (8h et 14h)
+        $schedule->command('tasks:check-deadlines')->twiceDaily(8, 14);
     }
 
     /**

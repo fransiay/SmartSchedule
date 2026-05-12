@@ -26,18 +26,24 @@ class Task extends Model
         'category_id',
         'title',
         'description',
-        'duration_minutes', // Durée totale de la tâche en minutes
-        'priority',         // Entier de 1 (Urgent) à 5 (Bas)
-        'deadline',         // Date limite de réalisation
+        'duration_minutes',
+        'priority',
+        'deadline',
         'status',
-        'modifier',   // todo / in_progress / done
+        'modifier',
+        // Récurrence
+        'is_recurring',
+        'recurrence_type',  // daily | weekly | monthly
+        'recurrence_days',  // JSON : [0,1,2,...6] (0=dim, 1=lun, ...)
+        'recurrence_end',   // Date de fin de répétition
+        'parent_task_id',   // Clé vers la tâche parente (occurrences)
     ];
 
-    /**
-     * Conversions automatiques de types.
-     */
     protected $casts = [
-        'deadline' => 'datetime', // Convertit automatiquement en objet Carbon
+        'deadline'        => 'datetime',
+        'recurrence_end'  => 'date',
+        'recurrence_days' => 'array',
+        'is_recurring'    => 'boolean',
     ];
 
     // ────────────────────────────────────────────────
@@ -66,5 +72,29 @@ class Task extends Model
     public function schedule()
     {
         return $this->hasOne(Schedule::class);
+    }
+
+    /**
+     * Pièces jointes de la tâche.
+     */
+    public function attachments()
+    {
+        return $this->hasMany(TaskAttachment::class);
+    }
+
+    /**
+     * Occurrences générées par la récurrence (tâches enfants).
+     */
+    public function children()
+    {
+        return $this->hasMany(Task::class, 'parent_task_id');
+    }
+
+    /**
+     * Tâche parente (pour les occurrences).
+     */
+    public function parent()
+    {
+        return $this->belongsTo(Task::class, 'parent_task_id');
     }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WebAuthController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,6 +50,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/availabilities', function () { return view('availabilities'); })->name('availabilities');
     Route::get('/calendar',       function () { return view('calendar'); })->name('calendar');
     Route::get('/categories',     function () { return view('categories'); })->name('categories');
+    Route::get('/analytics',      function () { return view('analytics'); })->name('analytics');
 
     // ────────────────────────────────────────────────
     // Routes "web-api" : utilisées par le JavaScript des vues Blade
@@ -80,12 +82,34 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/schedule',           [\App\Http\Controllers\Api\ScheduleController::class, 'index']);
         Route::post('/schedule/generate', [\App\Http\Controllers\Api\ScheduleController::class, 'generate']);
 
+        // ---- Analytics ----
+        Route::get('/analytics', [\App\Http\Controllers\Api\AnalyticsController::class, 'index']);
+
+        // ---- Pièces jointes ----
+        Route::get('/tasks/{task}/attachments',                [\App\Http\Controllers\Api\TaskAttachmentController::class, 'index']);
+        Route::post('/tasks/{task}/attachments',               [\App\Http\Controllers\Api\TaskAttachmentController::class, 'store']);
+        Route::delete('/tasks/{task}/attachments/{attachment}',[\App\Http\Controllers\Api\TaskAttachmentController::class, 'destroy']);
+
         // ---- Notifications ----
         Route::get('/notifications', function (Request $request) {
-            return $request->user()->notifications()->take(10)->get();
+            return $request->user()->notifications()->take(20)->get();
         });
         Route::post('/notifications/mark-read', function (Request $request) {
             $request->user()->unreadNotifications->markAsRead();
+            return response()->json(['success' => true]);
+        });
+        
+        // ---- Rappels d'échéance ----
+        Route::post('/notifications/check-deadlines', function (Request $request) {
+            \Illuminate\Support\Facades\Artisan::call('tasks:check-deadlines', ['--user' => $request->user()->id]);
+            return response()->json(['success' => true, 'output' => \Illuminate\Support\Facades\Artisan::output()]);
+        });
+
+        Route::post('/notifications/{id}/read', function (Request $request, $id) {
+            $notification = $request->user()->notifications()->find($id);
+            if ($notification && !$notification->read_at) {
+                $notification->markAsRead();
+            }
             return response()->json(['success' => true]);
         });
     });

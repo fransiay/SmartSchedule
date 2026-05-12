@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -44,6 +45,10 @@ class WebAuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             // Régénération de l'ID de session pour éviter les attaques de fixation de session
             $request->session()->regenerate();
+
+            // Vérifie les échéances et envoie des rappels pour cet utilisateur
+            Artisan::call('tasks:check-deadlines', ['--user' => Auth::id()]);
+
             return redirect()->intended(route('dashboard'));
         }
 
@@ -73,7 +78,14 @@ class WebAuthController extends Controller
         $request->validate([
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'required', 
+                'confirmed', 
+                Rules\Password::min(8)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+            ],
         ]);
 
         // Création de l'utilisateur avec mot de passe haché (bcrypt)

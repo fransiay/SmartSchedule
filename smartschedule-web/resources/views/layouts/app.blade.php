@@ -305,5 +305,101 @@
                 {{ $slot }}
             </main>
         </div>
+
+        <!-- Global Notification Controller -->
+        <script>
+            function notifController() {
+                const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                return {
+                    open: false,
+                    count: 0,
+                    notifications: [],
+                    loading: false,
+                    _interval: null,
+
+                    init() {
+                        // Vérifie les échéances au chargement de la page
+                        fetch('/web-api/notifications/check-deadlines', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
+                        }).then(() => this.fetchNotifications()).catch(() => this.fetchNotifications());
+                        // Poll toutes les 30 secondes
+                        this._interval = setInterval(() => this.fetchNotifications(), 30000);
+                    },
+
+                    toggle() {
+                        this.open = !this.open;
+                        if (this.open) this.fetchNotifications();
+                    },
+
+                    fetchNotifications() {
+                        if (this.notifications.length === 0) this.loading = true;
+                        fetch('/web-api/notifications', {
+                            credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json' }
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            this.notifications = Array.isArray(data) ? data : [];
+                            this.count = this.notifications.filter(n => n.read_at === null).length;
+                        })
+                        .catch(() => {})
+                        .finally(() => { this.loading = false; });
+                    },
+
+                    handleClick(n) {
+                        // Marquer comme lu
+                        if (!n.read_at) {
+                            fetch(`/web-api/notifications/${n.id}/read`, {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
+                            });
+                            n.read_at = new Date().toISOString();
+                            this.count = Math.max(0, this.count - 1);
+                        }
+                        // Naviguer vers la page concernée
+                        this.open = false;
+                        const action = n.data?.action || '/tasks';
+                        window.location.href = action;
+                    },
+
+                    markAllRead() {
+                        fetch('/web-api/notifications/mark-read', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
+                        });
+                        this.notifications.forEach(n => { if (!n.read_at) n.read_at = new Date().toISOString(); });
+                        this.count = 0;
+                    },
+
+                    typeEmoji(type) {
+                        return { success: '✅', info: 'ℹ️', warning: '⚠️', error: '❌' }[type] || '🔔';
+                    },
+
+                    typeColor(type, opacity) {
+                        const colors = { success: '22,163,74', info: '59,130,246', warning: '217,119,6', error: '225,29,72' };
+                        const c = colors[type] || '107,114,128';
+                        return `rgba(${c},${opacity})`;
+                    },
+
+                    timeAgo(dateStr) {
+                        if (!dateStr) return '';
+                        const now = new Date();
+                        const d = new Date(dateStr);
+                        const diffS = Math.floor((now - d) / 1000);
+                        if (diffS < 60)   return "à l'instant";
+                        if (diffS < 3600) return Math.floor(diffS / 60) + ' min';
+                        if (diffS < 86400) return Math.floor(diffS / 3600) + ' h';
+                        const days = Math.floor(diffS / 86400);
+                        if (days === 1) return 'hier';
+                        if (days < 7) return days + ' j';
+                        return d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+                    }
+                };
+            }
+        </script>
     </body>
 </html>

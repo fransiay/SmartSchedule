@@ -16,15 +16,10 @@ import Constants from 'expo-constants';
 // Expo expose l'IP de la machine de développement via expoConfig.hostUri.
 // On extrait l'IP pour construire l'URL de l'API dynamiquement.
 const debuggerHost = Constants.expoConfig?.hostUri;
-let ipAddress = 'localhost'; // Par défaut
+let ipAddress = '192.168.1.225'; // Ton IP locale détectée
 
-if (debuggerHost) {
-  ipAddress = debuggerHost.split(':')[0]; 
-}
-
-// Sur Android, 'localhost' ne fonctionne pas pour pointer vers la machine hôte
-// On utilise 10.0.2.2 qui est l'alias spécial pour l'ordinateur de dev
-if (Platform.OS === 'android' && (ipAddress === 'localhost' || ipAddress === '127.0.0.1')) {
+// Si on est sur émulateur, on peut utiliser l'alias 10.0.2.2
+if (Platform.OS === 'android' && !debuggerHost) {
   ipAddress = '10.0.2.2';
 }
 

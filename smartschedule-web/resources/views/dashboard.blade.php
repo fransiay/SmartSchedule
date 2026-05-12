@@ -45,21 +45,45 @@
                             style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;padding:10px 14px;border-radius:8px;font-size:0.82rem;margin-bottom:16px;">
                         </div>
 
-                        <div style="display:flex;flex-direction:column;gap:8px;">
+                        <div class="space-y-3">
                             <template x-for="schedule in todaySchedules" :key="schedule.id">
-                                <div class="schedule-item">
-                                    <div style="width:90px;flex-shrink:0;">
-                                        <div style="font-size:0.85rem;font-weight:700;color:#0f0f10;"
-                                            x-text="formatTime(schedule.start_time)"></div>
-                                        <div style="font-size:0.75rem;color:#aeaeb2;">→ <span
-                                                x-text="formatTime(schedule.end_time)"></span></div>
+                                <div class="group flex items-center p-4 rounded-2xl bg-white border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all duration-300">
+                                    <div class="w-20 flex-shrink-0">
+                                        <div class="text-[13px] font-bold text-gray-900" x-text="formatTime(schedule.start_time)"></div>
+                                        <div class="text-[10px] font-medium text-gray-400 mt-0.5" x-text="formatTime(schedule.end_time)"></div>
                                     </div>
-                                    <div class="accent-bar"></div>
-                                    <div style="flex:1;min-width:0;">
-                                        <div style="font-weight:600;color:#0f0f10;" x-text="schedule.task?.title"></div>
-                                        <div style="font-size:0.78rem;color:#aeaeb2;margin-top:2px;"
-                                            x-text="(schedule.task?.duration_minutes || '') + ' min'"></div>
+                                    
+                                    <div class="w-1 h-8 rounded-full bg-black/5 group-hover:bg-black transition-colors mx-4"></div>
+                                    
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-[14px] font-semibold text-gray-800 group-hover:text-black transition-colors" x-text="schedule.task?.title"></div>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <template x-if="schedule.task?.category">
+                                                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border border-gray-100 bg-gray-50 text-gray-500" 
+                                                      x-text="schedule.task.category.name"></span>
+                                            </template>
+                                            <span class="text-[10px] font-medium text-gray-400 flex items-center gap-1">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                                <span x-text="(schedule.task?.duration_minutes || '') + ' min'"></span>
+                                            </span>
+                                        </div>
                                     </div>
+
+                                    <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button class="p-2 text-gray-300 hover:text-gray-600">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                            
+                            <template x-if="todaySchedules.length === 0">
+                                <div class="py-12 text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-300"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                                    </div>
+                                    <p class="text-sm font-medium text-gray-900">Rien de prévu pour aujourd'hui</p>
+                                    <p class="text-xs text-gray-400 mt-1">Générez un planning pour optimiser votre journée.</p>
                                 </div>
                             </template>
                         </div>

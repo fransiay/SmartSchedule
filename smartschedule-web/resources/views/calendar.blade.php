@@ -156,7 +156,7 @@
         .fc-event-title {
             font-weight: 700 !important;
             font-size: 0.78rem !important;
-            color: #ffffff !important;
+            color: inherit;
             line-height: 1.1 !important;
             display: block;
             overflow: hidden;
@@ -168,7 +168,7 @@
         .fc-event-time {
             font-weight: 700 !important;
             font-size: 0.65rem !important;
-            color: #ffffff !important;
+            color: inherit;
             opacity: 0.9;
             line-height: 1;
             margin-bottom: 2px;
@@ -365,8 +365,7 @@
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
                 locale: 'fr',
-                height: 850,
-                expandRows: true,
+                height: 'auto',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
@@ -374,6 +373,7 @@
                 },
                 buttonText: { today: "Aujourd'hui", month: 'Mois', week: 'Semaine', day: 'Jour' },
                 allDaySlot: false,
+                scrollTime: '08:00:00',
                 slotMinTime: '06:00:00',
                 slotMaxTime: '24:00:00',
                 slotDuration: '00:30:00',
@@ -468,7 +468,7 @@
                                 const priorityStyles = {
                                     1: { bg: '#ef4444', border: '#ef4444', text: '#ffffff' }, // Urgent: Solid Red
                                     2: { bg: '#f97316', border: '#f97316', text: '#ffffff' }, // High: Solid Orange
-                                    3: { bg: '#eab308', border: '#eab308', text: '#ffffff' }, // Medium: Solid Yellow
+                                    3: { bg: '#eab308', border: '#eab308', text: '#0f0f10' }, // Medium: Solid Yellow (black text)
                                     4: { bg: '#3b82f6', border: '#3b82f6', text: '#ffffff' }, // Normal: Solid Blue
                                     5: { bg: '#10b981', border: '#10b981', text: '#ffffff' }  // Low: Solid Green
                                 };
