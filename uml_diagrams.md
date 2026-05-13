@@ -19,8 +19,8 @@ flowchart LR
     DispM((Gérer ses disponibilités))
     GenPlan((Générer le planning optimisé))
     ConsulterC((Consulter le calendrier))
-    Stats((Consulter les statistiques))
-    Notif((Consulter ses notifications))
+    Stats((Consulter les statistiques et analyses))
+    Notif((Gérer les notifications))
     
     %% Inclusions (extends/includes représentés par liens)
     User --> Auth
@@ -36,7 +36,10 @@ flowchart LR
     Auth -.-> Inscription((S'inscrire))
     Auth -.-> Connexion((Se connecter))
     TaskM -. "include" .-> GererPriorites((Définir priorités et durées))
+    TaskM -. "extend" .-> Recurrence((Gérer la récurrence))
+    TaskM -. "extend" .-> Attachments((Ajouter des pièces jointes))
     GenPlan -. "include" .-> DispM
+    Notif -. "include" .-> Rappels((Recevoir des rappels automatiques))
 ```
 
 ---
@@ -61,6 +64,7 @@ classDiagram
         +int id
         +int user_id
         +string name
+        +string color
         +datetime created_at
     }
     
@@ -68,12 +72,26 @@ classDiagram
         +int id
         +int user_id
         +int category_id
+        +int? parent_task_id
         +string title
         +string description
-        +int duration
-        +enum priority
+        +int duration_minutes
+        +int priority
         +datetime deadline
         +enum status
+        +boolean is_recurring
+        +string recurrence_type
+        +json recurrence_days
+        +date recurrence_end
+        +datetime created_at
+    }
+
+    class TaskAttachment {
+        +int id
+        +int task_id
+        +string file_path
+        +string file_name
+        +string file_type
         +datetime created_at
     }
     
@@ -94,14 +112,26 @@ classDiagram
         +datetime end_time
         +datetime created_at
     }
+
+    class Notification {
+        +string id
+        +string type
+        +int notifiable_id
+        +json data
+        +datetime read_at
+        +datetime created_at
+    }
     
     %% Relations
     User "1" *-- "0..*" Category : crée >
     User "1" *-- "0..*" Task : possède >
     User "1" *-- "0..*" Availability : définit >
     User "1" *-- "0..*" Schedule : a pour >
+    User "1" *-- "0..*" Notification : reçoit >
     Category "1" *-- "0..*" Task : classifie >
     Task "1" -- "0..1" Schedule : planifié en >
+    Task "1" *-- "0..*" TaskAttachment : contient >
+    Task "1" *-- "0..*" Task : génère (occurrences) >
 ```
 
 ---
@@ -178,6 +208,33 @@ sequenceDiagram
     M-->>U: Met à jour le Composant Calendrier
 ```
 
+### Séquence 3 : Notification de Rappel Automatique (Cron Job)
+
+```mermaid
+sequenceDiagram
+    participant C as Cron / Scheduler
+    participant CMD as Artisan Command (CheckTaskDeadlines)
+    participant D as Base de Données
+    participant N as Laravel Notification System
+    participant U as Utilisateur (Web/Mobile)
+
+    C->>CMD: Exécute toutes les heures
+    activate CMD
+    CMD->>D: SELECT tasks WHERE deadline < now + 24h AND notified = 0
+    activate D
+    D-->>CMD: Liste des tâches urgentes
+    deactivate D
+    
+    loop Pour chaque tâche
+        CMD->>N: TaskDeadlineNotification(task)
+        N->>D: INSERT INTO notifications
+        N->>U: Envoi Push / Broadcast
+    end
+    
+    CMD-->>C: Terminé
+    deactivate CMD
+```
+
 ---
 
 ## 4. Tableau de Scénarios d'Utilisation
@@ -191,3 +248,7 @@ Voici la liste des scénarios d'utilisation principaux qui cadrent les tests fon
 | **SC03** | Configuration des disponibilités | Utilisateur authentifié. | L'utilisateur sélectionne un jour (ex: Lundi) et configure la plage 09:00 à 17:00. Il sauvegarde. | Une plage de fin arrive avant la plage de début. L'application bloque l'envoi. | La disponibilité est enregistrée et sera utilisée pour l'algoritme. |
 | **SC04** | Génération du Planning | Utilisateur possède des tâches `todo` et des disponibilités valides. | L'utilisateur clique sur "Générer". L'API combine tâches et dispos, insère les données et renvoie le calendrier rempli. | L'utilisateur a 20h de tâches mais seulement 10h de disponibilités. Le serveur notifie que des tâches resteront non-placées. | Le planning visuel est rempli (Calendrier web et app rafraîchi). |
 | **SC05** | Changement de statut de tâche (Drag & Drop) | L'utilisateur possède une tâche planifiée dans le calendrier. | L'utilisateur déplace la tâche dans la colonne `done`. L'application envoie une requête PUT. | Problème réseau. La Tâche revient à sa position initiale. | La tâche est marquée comme complétée et l'indicateur repasse au vert. |
+| **SC06** | Configuration de la récurrence | L'utilisateur crée ou modifie une tâche. | L'utilisateur active "Récurrent", choisit "Hebdomadaire" et sélectionne "Lundi, Mercredi". Le système génère les occurrences jusqu'à la date de fin. | Date de fin manquante. Le système demande de préciser une limite. | Plusieurs tâches "enfants" sont créées ou prêtes à être planifiées. |
+| **SC07** | Consultation des Analytics | Utilisateur authentifié avec historique de tâches. | L'utilisateur ouvre l'onglet "Analytics". L'API calcule le taux de complétion et le temps par catégorie. | Pas de tâches enregistrées. Les graphiques affichent des états vides avec message d'incitation. | L'utilisateur visualise sa progression et sa répartition du temps. |
+| **SC08** | Réception de Notification | Une tâche approche de sa deadline (< 24h). | Le serveur détecte la tâche, crée une notification et l'affiche sur le mobile de l'utilisateur. | L'utilisateur est déconnecté. La notification est stockée et apparaîtra à la prochaine connexion. | L'utilisateur est alerté de l'urgence d'une tâche. |
+�che revient à sa position initiale. | La tâche est marquée comme complétée et l'indicateur repasse au vert. |
