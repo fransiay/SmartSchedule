@@ -10,20 +10,7 @@ import Constants from 'expo-constants';
  * Un intercepteur injecte automatiquement le token Bearer dans chaque requête.
  */
 
-// ────────────────────────────────────────────────
-// Détection automatique de l'adresse IP du serveur
-// ────────────────────────────────────────────────
-// Expo expose l'IP de la machine de développement via expoConfig.hostUri.
-// On extrait l'IP pour construire l'URL de l'API dynamiquement.
-const debuggerHost = Constants.expoConfig?.hostUri;
-let ipAddress = '192.168.1.225'; // Ton IP locale détectée
-
-// Si on est sur émulateur, on peut utiliser l'alias 10.0.2.2
-if (Platform.OS === 'android' && !debuggerHost) {
-  ipAddress = '10.0.2.2';
-}
-
-const baseURL = `http://${ipAddress}:8000/api`;
+const baseURL = 'https://neo-solution.fr/api';
 
 console.log('Attempting to connect to API at:', baseURL);
 

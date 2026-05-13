@@ -11,12 +11,8 @@ use Illuminate\Console\Command;
 /**
  * Commande de vérification des échéances de tâches.
  *
- * Analyse toutes les tâches non terminées et envoie des notifications
- * de rappel aux utilisateurs selon la proximité de la deadline :
- *   - Tâche en retard (deadline passée)
- *   - Deadline aujourd'hui
- *   - Deadline demain
- *   - Deadline dans 3 jours
+ * Analyse toutes les tâches non terminées et envoie une notification
+ * de rappel uniquement si la deadline est DEMAIN.
  *
  * Anti-spam : vérifie qu'une notification similaire n'a pas déjà été
  * envoyée dans les dernières 12 heures pour la même tâche.
@@ -24,7 +20,7 @@ use Illuminate\Console\Command;
 class CheckTaskDeadlines extends Command
 {
     protected $signature = 'tasks:check-deadlines {--user= : ID d\'un utilisateur spécifique (optionnel)}';
-    protected $description = 'Vérifie les échéances des tâches et envoie des rappels de deadline';
+    protected $description = 'Vérifie les échéances des tâches et envoie des rappels (J-1 uniquement)';
 
     public function handle(): int
     {
@@ -74,13 +70,13 @@ class CheckTaskDeadlines extends Command
     }
 
     /**
-     * Détermine le message de rappel selon la proximité de la deadline.
+     * Détermine le message de rappel (Uniquement pour J-1).
      */
     private function buildReminder(Task $task): ?array
     {
         $now = Carbon::now()->startOfDay();
         $deadline = Carbon::parse($task->deadline)->startOfDay();
-        $diff = $now->diffInDays($deadline, false); // négatif si passé
+        $diff = $now->diffInDays($deadline, false); 
 
         $statusLabels = [
             'todo'        => 'À faire',
@@ -88,43 +84,15 @@ class CheckTaskDeadlines extends Command
         ];
         $statusText = $statusLabels[$task->status] ?? $task->status;
 
-        // Tâche en retard
-        if ($diff < 0) {
-            $jours = abs($diff);
-            return [
-                'message'       => "⚠️ « {$task->title} » est en retard de {$jours} jour(s) ! Statut : {$statusText}.",
-                'type'          => 'error',
-                'reminder_type' => 'overdue',
-            ];
-        }
-
-        // Deadline aujourd'hui
-        if ($diff === 0) {
-            return [
-                'message'       => "🔴 « {$task->title} » expire aujourd'hui ! Statut actuel : {$statusText}.",
-                'type'          => 'warning',
-                'reminder_type' => 'today',
-            ];
-        }
-
-        // Deadline demain
+        // Rappel uniquement pour demain (J-1)
         if ($diff === 1) {
             return [
-                'message'       => "🟠 « {$task->title} » expire demain. Statut actuel : {$statusText}.",
+                'message'       => "🔔 Rappel : La tâche « {$task->title} » expire demain. Statut : {$statusText}.",
                 'type'          => 'warning',
                 'reminder_type' => 'tomorrow',
             ];
         }
 
-        // Deadline dans 3 jours
-        if ($diff === 3) {
-            return [
-                'message'       => "🟡 « {$task->title} » expire dans 3 jours. Statut actuel : {$statusText}.",
-                'type'          => 'info',
-                'reminder_type' => 'in_3_days',
-            ];
-        }
-
-        return null; // Pas de rappel nécessaire
+        return null; // Pas de rappel nécessaire pour les autres cas
     }
 }

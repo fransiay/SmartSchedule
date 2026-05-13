@@ -62,9 +62,6 @@ class TaskController extends Controller
         // Création de la tâche liée à l'utilisateur
         $task = $request->user()->tasks()->create($validated);
 
-        // Notification de création
-        $request->user()->notify(new TaskNotification($task, "Nouvelle tâche créée : {$task->title}", 'success'));
-
         return response()->json($task, 201); // 201 Created
     }
 
@@ -114,22 +111,7 @@ class TaskController extends Controller
             'recurrence_end'   => 'nullable|date',
         ]);
 
-        $oldStatus = $task->status;
         $task->update($validated);
-
-        // Notification si le statut change
-        if (isset($validated['status']) && $validated['status'] !== $oldStatus) {
-            $statusText = [
-                'todo' => 'À faire',
-                'in_progress' => 'En cours',
-                'done' => 'Terminée'
-            ];
-            $request->user()->notify(new TaskNotification(
-                $task, 
-                "Statut de la tâche '{$task->title}' mis à jour : " . ($statusText[$task->status] ?? $task->status), 
-                $task->status === 'done' ? 'success' : 'info'
-            ));
-        }
 
         return response()->json($task);
     }
