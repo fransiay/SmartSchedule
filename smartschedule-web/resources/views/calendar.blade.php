@@ -18,19 +18,19 @@
 
             <div class="legend-container">
                 <div class="legend-item">
-                    <div class="legend-color" style="background:#ef4444;"></div> P1 Urgent
+                    <div class="legend-color" style="background:#fee2e2; border: 1px solid #fecaca;"></div> P1 Urgent
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background:#f97316;"></div> P2 Élevé
+                    <div class="legend-color" style="background:#ffedd5; border: 1px solid #fed7aa;"></div> P2 Élevé
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background:#eab308;"></div> P3 Moyen
+                    <div class="legend-color" style="background:#fefce8; border: 1px solid #fef08a;"></div> P3 Moyen
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background:#3b82f6;"></div> P4 Normal
+                    <div class="legend-color" style="background:#dbeafe; border: 1px solid #bfdbfe;"></div> P4 Normal
                 </div>
                 <div class="legend-item">
-                    <div class="legend-color" style="background:#10b981;"></div> P5 Bas
+                    <div class="legend-color" style="background:#dcfce7; border: 1px solid #bbf7d0;"></div> P5 Bas
                 </div>
                 <div class="legend-item" style="margin-left:auto;">
                     <div class="legend-color" style="background:rgba(15, 15, 16, 0.04);border:1px dashed #d1d1d6;">
@@ -355,6 +355,64 @@
             const errorEl = document.getElementById('calendarError');
             const popup = document.getElementById('eventPopup');
 
+            let hideTimeout;
+
+            function showPopup(info) {
+                const task = info.event.extendedProps.task;
+                if (!task) return;
+
+                const start = info.event.start?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                const end = info.event.end?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+                const priorityColors = {
+                    1: { text: 'Urgent', color: '#991b1b', bg: '#fee2e2' },
+                    2: { text: 'Élevé', color: '#9a3412', bg: '#ffedd5' },
+                    3: { text: 'Moyen', color: '#854d0e', bg: '#fefce8' },
+                    4: { text: 'Normal', color: '#1e40af', bg: '#dbeafe' },
+                    5: { text: 'Bas', color: '#166534', bg: '#dcfce7' }
+                };
+
+                const p = priorityColors[task?.priority || 3];
+
+                document.getElementById('eventPopupTitle').textContent = info.event.title;
+                document.getElementById('eventPopupPriority').innerHTML = `<span class="priority-dot" style="background:${p.color}"></span> Priorité ${task?.priority || 3} : ${p.text}`;
+                document.getElementById('eventPopupPriority').style.color = p.color;
+                document.getElementById('popupHeader').style.background = p.bg;
+
+                document.getElementById('eventPopupTime').innerHTML = `<span>🕒</span> ${start} — ${end}`;
+                document.getElementById('eventPopupDuration').innerHTML = task?.duration_minutes ? `<span>⏳</span> Durée : ${task.duration_minutes} min` : '';
+
+                const descEl = document.getElementById('eventPopupDesc');
+                if (task?.description) {
+                    descEl.textContent = task.description;
+                    descEl.style.display = 'block';
+                } else {
+                    descEl.style.display = 'none';
+                }
+
+                const rect = info.el.getBoundingClientRect();
+                popup.style.display = 'block';
+
+                // Position popup relative to the viewport because it is position: fixed
+                let top = rect.bottom + 8;
+                let left = rect.left;
+
+                // Prevent overflow
+                if (left + 320 > window.innerWidth) left = window.innerWidth - 340;
+                if (top + 200 > window.innerHeight) top = rect.top - 210;
+
+                popup.style.top = top + 'px';
+                popup.style.left = Math.max(20, left) + 'px';
+            }
+
+            popup.addEventListener('mouseenter', function() {
+                clearTimeout(hideTimeout);
+            });
+
+            popup.addEventListener('mouseleave', function() {
+                popup.style.display = 'none';
+            });
+
             // Close popup when clicking outside
             document.addEventListener('click', function (e) {
                 if (!popup.contains(e.target) && !e.target.closest('.fc-event')) {
@@ -378,51 +436,19 @@
                 slotMaxTime: '24:00:00',
                 slotDuration: '00:30:00',
                 nowIndicator: true,
+                eventMouseEnter: function (info) {
+                    clearTimeout(hideTimeout);
+                    showPopup(info);
+                },
+                eventMouseLeave: function (info) {
+                    hideTimeout = setTimeout(() => {
+                        popup.style.display = 'none';
+                    }, 150);
+                },
                 eventClick: function (info) {
                     info.jsEvent.stopPropagation();
-                    const task = info.event.extendedProps.task;
-                    const start = info.event.start?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-                    const end = info.event.end?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-                    const priorityColors = {
-                        1: { text: 'Urgent', color: '#ef4444', bg: '#fef2f2' },
-                        2: { text: 'Élevé', color: '#f97316', bg: '#fff7ed' },
-                        3: { text: 'Moyen', color: '#eab308', bg: '#fefce8' },
-                        4: { text: 'Normal', color: '#3b82f6', bg: '#eff6ff' },
-                        5: { text: 'Bas', color: '#10b981', bg: '#f0fdf4' }
-                    };
-
-                    const p = priorityColors[task?.priority || 3];
-
-                    document.getElementById('eventPopupTitle').textContent = info.event.title;
-                    document.getElementById('eventPopupPriority').innerHTML = `<span class="priority-dot" style="background:${p.color}"></span> Priorité ${task?.priority || 3} : ${p.text}`;
-                    document.getElementById('eventPopupPriority').style.color = p.color;
-                    document.getElementById('popupHeader').style.background = p.bg;
-
-                    document.getElementById('eventPopupTime').innerHTML = `<span>🕒</span> ${start} — ${end}`;
-                    document.getElementById('eventPopupDuration').innerHTML = task?.duration_minutes ? `<span>⏳</span> Durée : ${task.duration_minutes} min` : '';
-
-                    const descEl = document.getElementById('eventPopupDesc');
-                    if (task?.description) {
-                        descEl.textContent = task.description;
-                        descEl.style.display = 'block';
-                    } else {
-                        descEl.style.display = 'none';
-                    }
-
-                    const rect = info.el.getBoundingClientRect();
-                    popup.style.display = 'block';
-
-                    // Position popup
-                    let top = rect.bottom + window.scrollY + 8;
-                    let left = rect.left + window.scrollX;
-
-                    // Prevent overflow
-                    if (left + 320 > window.innerWidth) left = window.innerWidth - 340;
-                    if (top + 200 > window.innerHeight + window.scrollY) top = rect.top + window.scrollY - 210;
-
-                    popup.style.top = top + 'px';
-                    popup.style.left = Math.max(20, left) + 'px';
+                    clearTimeout(hideTimeout);
+                    showPopup(info);
                 },
                 events: function (info, successCallback, failureCallback) {
                     errorEl.style.display = 'none';
@@ -466,11 +492,11 @@
                             let taskEvents = [];
                             if (Array.isArray(schedulesData) && schedulesData.length > 0) {
                                 const priorityStyles = {
-                                    1: { bg: '#ef4444', border: '#ef4444', text: '#ffffff' }, // Urgent: Solid Red
-                                    2: { bg: '#f97316', border: '#f97316', text: '#ffffff' }, // High: Solid Orange
-                                    3: { bg: '#eab308', border: '#eab308', text: '#0f0f10' }, // Medium: Solid Yellow (black text)
-                                    4: { bg: '#3b82f6', border: '#3b82f6', text: '#ffffff' }, // Normal: Solid Blue
-                                    5: { bg: '#10b981', border: '#10b981', text: '#ffffff' }  // Low: Solid Green
+                                    1: { bg: '#fee2e2', border: '#fecaca', text: '#991b1b' }, // Urgent: Pastel Red
+                                    2: { bg: '#ffedd5', border: '#fed7aa', text: '#9a3412' }, // High: Pastel Orange
+                                    3: { bg: '#fefce8', border: '#fef08a', text: '#854d0e' }, // Medium: Pastel Yellow
+                                    4: { bg: '#dbeafe', border: '#bfdbfe', text: '#1e40af' }, // Normal: Pastel Blue
+                                    5: { bg: '#dcfce7', border: '#bbf7d0', text: '#166534' }  // Low: Pastel Green
                                 };
 
                                 taskEvents = schedulesData

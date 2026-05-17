@@ -52,42 +52,79 @@
                     <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.away="open = false" style="display:none;position:absolute;right:0;margin-top:8px;width:370px;z-index:50;background:#ffffff;border:1px solid #e5e5e7;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.12);overflow:hidden;">
 
                         <!-- Header -->
-                        <div style="padding:14px 16px;border-bottom:1px solid #f2f2f3;display:flex;align-items:center;justify-content:space-between;">
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <span style="font-size:0.875rem;font-weight:800;color:#0f0f10;">Notifications</span>
-                                <template x-if="count > 0"><span x-text="count" style="font-size:10px;font-weight:800;background:#fee2e2;color:#e11d48;padding:2px 7px;border-radius:20px;"></span></template>
+                        <div style="padding: 16px 20px; border-bottom: 1px solid #f2f2f3; display:flex; justify-content:space-between; align-items:center;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <h3 style="font-weight:800; font-size:16px; color:#0f0f10; margin:0;">Notifications</h3>
+                                <template x-if="count > 0">
+                                    <span x-text="count" style="background:#fee2e2; color:#ef4444; font-size:12px; font-weight:800; padding:2px 8px; border-radius:12px;"></span>
+                                </template>
                             </div>
-                            <button x-show="count > 0" @click="markAllRead()" style="font-size:11px;font-weight:700;color:#3b82f6;background:none;border:none;cursor:pointer;padding:4px 10px;border-radius:6px;transition:background 0.15s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='transparent'">Tout lire</button>
+                            <button x-show="count > 0" @click="markAllRead()" style="font-size:13px; font-weight:700; color:#3b82f6; background:none; border:none; cursor:pointer; padding:4px 8px; border-radius:6px;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='none'">
+                                Tout lire
+                            </button>
                         </div>
 
-                        <!-- List -->
-                        <div style="max-height:380px;overflow-y:auto;">
+                        <!-- Content -->
+                        <div style="max-height: 420px; overflow-y: auto;">
+                            <style>
+                                .notif-item {
+                                    display: flex;
+                                    align-items: flex-start;
+                                    gap: 14px;
+                                    padding: 16px 20px;
+                                    cursor: pointer;
+                                    transition: all 0.2s;
+                                    text-decoration: none;
+                                    position: relative;
+                                }
+                                .notif-item:hover {
+                                    background: #f9fafb !important;
+                                }
+                                .notif-unread {
+                                    background: transparent;
+                                }
+                            </style>
                             <template x-if="loading">
-                                <div style="padding:32px;text-align:center;color:#aeaeb2;font-size:13px;">Chargement...</div>
+                                <div style="padding:40px; text-align:center;">
+                                    <div class="animate-spin" style="width:24px; height:24px; border:2px solid #f3f3f4; border-top-color:#3b82f6; border-radius:50%; margin:0 auto 12px;"></div>
+                                    <p style="font-size:13px; color:#aeaeb2;">Chargement...</p>
+                                </div>
                             </template>
+
                             <template x-if="!loading && notifications.length === 0">
-                                <div style="padding:40px 24px;text-align:center;">
-                                    <div style="width:44px;height:44px;background:#f7f7f8;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d1d1d6" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                <div style="padding:50px 30px; text-align:center;">
+                                    <div style="width:48px; height:48px; background:#f7f7f8; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                                     </div>
-                                    <p style="font-size:13px;font-weight:700;color:#0f0f10;margin:0 0 4px;">Tout est à jour !</p>
-                                    <p style="font-size:12px;color:#aeaeb2;margin:0;">Aucune notification pour le moment.</p>
+                                    <p style="font-weight:700; color:#0f0f10; font-size:14px; margin-bottom:4px;">Aucune notification</p>
+                                    <p style="font-size:12px; color:#aeaeb2; line-height:1.4;">Nous vous préviendrons dès qu'il y aura du nouveau sur vos tâches.</p>
                                 </div>
                             </template>
                             <template x-if="!loading && notifications.length > 0">
-                                <div>
+                                <div style="padding: 4px 0;">
                                     <template x-for="n in notifications" :key="n.id">
-                                        <a :href="n.data?.action || '/tasks'" @click.prevent="handleClick(n)" style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer;border-bottom:1px solid #f7f7f8;transition:background 0.15s;text-decoration:none;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
-                                            <div :style="'background:' + typeColor(n.data?.type, 0.1) + ';color:' + typeColor(n.data?.type, 1)" style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                <span x-text="typeEmoji(n.data?.type)" style="font-size:16px;"></span>
+                                        <a :href="n.data?.action || '/tasks'" @click.prevent="handleClick(n)" 
+                                           class="notif-item"
+                                           :class="!n.read_at ? 'notif-unread' : ''"
+                                           :data-unread="!n.read_at">
+                                            
+                                            <!-- Icon -->
+                                            <div :style="'background:' + typeColor(n.data?.type, 0.1)" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">
+                                                <span x-text="n.data?.type === 'error' ? '🚨' : (n.data?.type === 'warning' ? '⚠️' : '🔔')"></span>
                                             </div>
-                                            <div style="flex:1;min-width:0;">
-                                                <p x-text="n.data?.message || 'Notification'" :style="!n.read_at ? 'font-weight:700;color:#0f0f10;' : 'font-weight:500;color:#6c6c70;'" style="font-size:13px;margin:0 0 4px;line-height:1.4;"></p>
+
+                                            <div style="flex:1;min-width:0;padding-top:0;">
+                                                <p x-text="n.data?.message || 'Notification'" 
+                                                   :style="!n.read_at ? 'font-weight:800;color:#0f0f10;' : 'font-weight:500;color:#6c6c70;'" 
+                                                   style="font-size:15px;margin:0 0 8px;line-height:1.4;letter-spacing:-0.01em;"></p>
+                                                
                                                 <div style="display:flex;align-items:center;gap:6px;">
-                                                    <span x-text="timeAgo(n.created_at)" style="font-size:11px;color:#aeaeb2;font-weight:500;"></span>
-                                                    <span style="font-size:10px;font-weight:700;color:#3b82f6;">→ Voir</span>
+                                                    <span x-text="timeAgo(n.created_at)" style="font-size:12px;color:#aeaeb2;font-weight:600;"></span>
+                                                    <span style="font-size:12px;color:#3b82f6;font-weight:700;">→ Voir</span>
                                                 </div>
                                             </div>
+
+                                            <!-- Unread Indicator (Blue Dot) -->
                                             <div x-show="!n.read_at" style="width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0;margin-top:6px;"></div>
                                         </a>
                                     </template>
@@ -96,8 +133,8 @@
                         </div>
 
                         <!-- Footer -->
-                        <div style="padding:10px 16px;border-top:1px solid #f2f2f3;text-align:center;">
-                            <a href="{{ route('tasks') }}" style="font-size:11px;font-weight:700;color:#6c6c70;text-decoration:none;text-transform:uppercase;letter-spacing:0.05em;" onmouseover="this.style.color='#0f0f10'" onmouseout="this.style.color='#6c6c70'">Voir toutes les tâches</a>
+                        <div style="padding:16px;border-top:1px solid #f2f2f3;text-align:center;">
+                            <a href="{{ route('tasks') }}" style="font-size:12px;font-weight:800;color:#6c6c70;text-decoration:none;text-transform:uppercase;letter-spacing:0.05em;" onmouseover="this.style.color='#0f0f10'" onmouseout="this.style.color='#6c6c70'">Voir toutes les tâches</a>
                         </div>
                     </div>
                 </div>

@@ -34,7 +34,7 @@ class TaskAttachment extends Model
     // ── Accesseur : URL publique via le storage ──
     public function getUrlAttribute(): string
     {
-        return asset('storage/' . $this->path);
+        return 'https://neo-solution.fr/storage/' . $this->path;
     }
 
     protected $appends = ['url'];

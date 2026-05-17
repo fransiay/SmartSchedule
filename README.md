@@ -30,17 +30,18 @@ SmartSchedule combine une **interface web** (React + Vite) et une **applicat
 
 ## Fonctionnalités
 
- Fonctionnalité 
-| **** | Authentification sécurisée (Laravel Sanctum, tokens JWT) |
-| **** | Gestion des catégories, tâches, pièces jointes |
-| **** | Définition des disponibilités (jours/horaires) |
-| **** | Génération intelligente du planning (priorité, deadline, récurrence) |
-| **** | Support de la récurrence (daily / weekly / monthly) |
-| **** | Tableau de bord analytique (taux de complétion, temps moyen) |
-| **** | Notifications push (Expo) et notifications in‑app (broadcast) |
-| **** | Vue calendrier interactif (drag‑&‑drop, mise à jour du statut) |
-| **** | Cron / Scheduler pour les rappels de deadline |
-| **** | Tests unitaires et d’intégration (PHPUnit, Jest) |
+| Icône | Fonctionnalité |
+| :---: | :--- |
+| ✅ | Authentification sécurisée (Laravel Sanctum, tokens JWT) |
+| 📁 | Gestion des catégories, tâches, pièces jointes |
+| 🗓️ | Définition des disponibilités (jours/horaires) |
+| 🧠 | Génération intelligente du planning (priorité, deadline, récurrence) |
+| 🔁 | Support de la récurrence (daily / weekly / monthly) |
+| 📊 | Tableau de bord analytique (taux de complétion, temps moyen) |
+| 🔔 | Notifications push (Expo) et notifications in‑app (broadcast) |
+| 📅 | Vue calendrier interactif (drag‑&‑drop, mise à jour du statut) |
+| ⏰ | Cron / Scheduler pour les rappels de deadline |
+| 🧪 | Tests unitaires et d’intégration (PHPUnit, Jest) |
 
 
 
@@ -90,13 +91,14 @@ flowchart LR
 - **MySQL** 8.x (ou MariaDB compatible) 
 - **Docker** (optionnel, pour le développement rapide)  
 
-### 1️ Clone du dépôt
-bash
+### 1. Clone du dépôt
+```bash
 git clone https://github.com/fransiay/SmartSchedule
 cd SmartSchedule
+```
 
-### 2Backend Laravel
-bash
+### 2. Backend Laravel
+```bash
 cd smartschedule-web
 composer install
 cp .env.example .env
@@ -104,10 +106,10 @@ cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed   # crée les tables + données de démonstration
 php artisan serve            # http://127.0.0.1:8000
+```
 
-
-### Frontend Web
-bash
+### 3. Frontend Web
+```bash
 cd ../smartschedule-web
 npm install
 npm run dev   # http://localhost:5173
@@ -141,18 +143,19 @@ Programmez‑le chaque heure.
 ---
 
 ## API REST (Laravel)
-| Méthode | Endpoint | Description | Auth |
 
-| `POST` | `/api/login` | Authentification, renvoie le token Sanctum |  |
-| `POST` | `/api/register` | Enregistrement d’un nouvel utilisateur | |
-| `GET` | `/api/tasks` | Liste les tâches de l’utilisateur 
-| `POST` | `/api/tasks` | Crée une tâche (supporte les champs de récurrence) |  |
-| `PATCH`| `/api/tasks/{id}` | Met à jour la tâche (status, priorité…) |  |
-| `DELETE`| `/api/tasks/{id}` | Supprime la tâche 
-| `POST` | `/api/availabilities` | Crée/Met à jour les disponibilités | |
-| `POST` | `/api/schedule/generate` | Génère le planning optimisé (rate‑limited) 
-| `GET` | `/api/analytics` | Retourne les statistiques (taux de complétion, temps moyen) 
-| `GET` | `/api/notifications` | Historique des notifications 
+| Méthode | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :---: |
+| `POST` | `/api/login` | Authentification, renvoie le token Sanctum | ❌ |
+| `POST` | `/api/register` | Enregistrement d’un nouvel utilisateur | ❌ |
+| `GET` | `/api/tasks` | Liste les tâches de l’utilisateur | ✅ |
+| `POST` | `/api/tasks` | Crée une tâche (supporte les champs de récurrence) | ✅ |
+| `PATCH`| `/api/tasks/{id}` | Met à jour la tâche (status, priorité…) | ✅ |
+| `DELETE`| `/api/tasks/{id}` | Supprime la tâche | ✅ |
+| `POST` | `/api/availabilities` | Crée/Met à jour les disponibilités | ✅ |
+| `POST` | `/api/schedule/generate` | Génère le planning optimisé (rate‑limited) | ✅ |
+| `GET` | `/api/analytics` | Retourne les statistiques (taux de complétion, temps moyen) | ✅ |
+| `GET` | `/api/notifications` | Historique des notifications | ✅ |
 
 > **Note** : toutes les routes sont protégées par le middleware `auth:sanctum`.
 

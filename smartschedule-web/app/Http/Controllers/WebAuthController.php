@@ -81,10 +81,11 @@ class WebAuthController extends Controller
             'password' => [
                 'required', 
                 'confirmed', 
-                Rules\Password::min(8)
+                Rules\Password::min(12)
                     ->mixedCase()
                     ->numbers()
                     ->symbols()
+                    ->uncompromised()
             ],
         ]);
 

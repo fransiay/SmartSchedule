@@ -19,6 +19,21 @@ class Task extends Model
     use HasFactory;
 
     /**
+     * Nettoyage automatique des notifications liées lors de la suppression de la tâche.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($task) {
+            // Supprimer toutes les notifications liées à cette tâche
+            \DB::table('notifications')
+                ->where('data->task_id', $task->id)
+                ->delete();
+        });
+    }
+
+    /**
      * Champs remplissables (protection contre le mass assignment).
      */
     protected $fillable = [

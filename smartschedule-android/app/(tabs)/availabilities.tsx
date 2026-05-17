@@ -67,12 +67,35 @@ export default function AvailabilitiesScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f9fafb', padding: 15 },
-    header: { marginBottom: 20 },
-    title: { fontSize: 24, fontWeight: 'bold', color: '#111827' },
-    dayGroup: { backgroundColor: '#fff', padding: 15, borderRadius: 10, marginBottom: 10, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 },
-    dayTitle: { fontSize: 16, fontWeight: 'bold', color: '#4f46e5', marginBottom: 10 },
-    block: { backgroundColor: '#f3f4f6', padding: 10, borderRadius: 6, marginBottom: 5 },
-    blockText: { fontSize: 14, color: '#374151' },
-    emptyText: { fontSize: 14, color: '#9ca3af', fontStyle: 'italic' }
+    container: { flex: 1, backgroundColor: '#F7F7F8' },
+    header: { paddingHorizontal: 20, paddingTop: 20, marginBottom: 20 },
+    title: { fontSize: 28, fontWeight: '900', color: '#0F0F10', letterSpacing: -0.8 },
+    dayGroup: { 
+        backgroundColor: '#FFFFFF', 
+        padding: 20, 
+        borderRadius: 20, 
+        marginHorizontal: 20,
+        marginBottom: 16, 
+        borderWidth: 1, 
+        borderColor: '#E5E5E7',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 2
+    },
+    dayTitle: { fontSize: 16, fontWeight: '800', color: '#0F0F10', marginBottom: 12, letterSpacing: -0.4 },
+    block: { 
+        backgroundColor: '#F9FAFB', 
+        paddingVertical: 10, 
+        paddingHorizontal: 12, 
+        borderRadius: 12, 
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#F1F1F2',
+        flexDirection: 'row',
+        alignItems: 'center'
+    },
+    blockText: { fontSize: 14, color: '#3A3A3C', fontWeight: '700' },
+    emptyText: { fontSize: 13, color: '#AEAeb2', fontStyle: 'italic', fontWeight: '500' }
 });

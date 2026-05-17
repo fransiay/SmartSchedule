@@ -82,21 +82,27 @@
                                         </div>
                                     </td>
                                     <td class="py-4 px-6">
-                                        <span class="text-[13px] font-medium"
-                                            :style="new Date(task.deadline)<new Date()&&task.status!='done'?'color:#e11d48;':'color:#6b7280;'"
-                                            x-text="new Date(task.deadline).toLocaleDateString('fr-FR')"></span>
+                                        <div class="flex flex-col gap-0.5">
+                                            <span class="text-[13px] font-bold"
+                                                :style="isPast(task.deadline) && task.status != 'done' ? 'color:#e11d48;' : (isToday(task.deadline) ? 'color:#d97706;' : 'color:#6b7280;')"
+                                                x-text="formatDeadline(task.deadline)">
+                                            </span>
+                                            <template x-if="isToday(task.deadline) && task.status != 'done'">
+                                                <span class="text-[10px] font-extrabold text-amber-600 uppercase tracking-tight">Aujourd'hui</span>
+                                            </template>
+                                            <template x-if="isTomorrow(task.deadline) && task.status != 'done'">
+                                                <span class="text-[10px] font-extrabold text-blue-500 uppercase tracking-tight">Demain</span>
+                                            </template>
+                                        </div>
                                     </td>
                                     <td class="py-4 px-6">
                                         <div class="relative inline-block">
                                             <select x-model="task.status" @change="updateStatus(task)"
-                                                class="appearance-none bg-gray-50/50 border border-gray-200 rounded-lg px-3 py-1.5 pr-8 text-[12px] font-semibold text-gray-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-black/5 transition-all">
+                                                class="bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-1.5 text-[12px] font-bold text-gray-700 cursor-pointer hover:bg-gray-100/50 focus:outline-none focus:ring-2 focus:ring-black/5 transition-all shadow-sm">
                                                 <option value="todo">À faire</option>
                                                 <option value="in_progress">En cours</option>
                                                 <option value="done">Terminé</option>
                                             </select>
-                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                                                <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-                                            </div>
                                         </div>
                                     </td>
                                     <td class="py-4 px-6 text-right">
@@ -262,9 +268,37 @@
                 init() { this.fetchTasks(); this.fetchCategories(); },
                 emptyTask() {
                     return { id: null, title: '', description: '', duration_minutes: 60, priority: 3,
-                        deadline: new Date().toISOString().split('T')[0], status: 'todo', category_id: '',
+                        deadline: new Date().toLocaleDateString('en-CA'), status: 'todo', category_id: '',
                         is_recurring: false, recurrence_type: 'weekly', recurrence_days: [], recurrence_end: '',
                         attachments: [] };
+                },
+                formatDeadline(deadlineString) {
+                    if (!deadlineString) return '';
+                    const datePart = deadlineString.split('T')[0].split(' ')[0];
+                    const parts = datePart.split('-');
+                    if (parts.length !== 3) return deadlineString;
+                    const [year, month, day] = parts;
+                    return `${day}/${month}/${year}`;
+                },
+                isToday(deadlineString) {
+                    if (!deadlineString) return false;
+                    const datePart = deadlineString.split('T')[0].split(' ')[0];
+                    const todayStr = new Date().toLocaleDateString('en-CA');
+                    return datePart === todayStr;
+                },
+                isTomorrow(deadlineString) {
+                    if (!deadlineString) return false;
+                    const datePart = deadlineString.split('T')[0].split(' ')[0];
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const tomorrowStr = tomorrow.toLocaleDateString('en-CA');
+                    return datePart === tomorrowStr;
+                },
+                isPast(deadlineString) {
+                    if (!deadlineString) return false;
+                    const datePart = deadlineString.split('T')[0].split(' ')[0];
+                    const todayStr = new Date().toLocaleDateString('en-CA');
+                    return datePart < todayStr;
                 },
                 fetchCategories() { apiFetch('/web-api/categories').then(r => r.json()).then(d => { this.categories = Array.isArray(d) ? d : []; }); },
                 fetchTasks()     { apiFetch('/web-api/tasks').then(r => r.json()).then(d => { this.tasks = Array.isArray(d) ? d : []; }); },
@@ -297,7 +331,7 @@
                         description: this.currentTask.description || null,
                         duration_minutes: parseInt(this.currentTask.duration_minutes),
                         priority: parseInt(this.currentTask.priority),
-                        deadline: this.currentTask.deadline + ' 00:00:00',
+                        deadline: this.currentTask.deadline + ' 23:59:59',
                         category_id: this.currentTask.category_id || null,
                         status: this.currentTask.status,
                         is_recurring: !!this.currentTask.is_recurring,

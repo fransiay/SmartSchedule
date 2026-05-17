@@ -83,7 +83,7 @@
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-300"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                                     </div>
                                     <p class="text-sm font-medium text-gray-900">Rien de prévu pour aujourd'hui</p>
-                                    <p class="text-xs text-gray-400 mt-1">Générez un planning pour optimiser votre journée.</p>
+                                    <p class="text-xs text-gray-400 mt-1" x-text="schedules.length > 0 ? '💡 Vos tâches ont été planifiées avec succès pour les prochains jours ! Visitez l\'onglet \"Calendrier\" pour les consulter.' : 'Générez un planning pour optimiser votre journée.'"></p>
                                 </div>
                             </template>
                         </div>
@@ -157,9 +157,13 @@
                     return { total: this.tasks.length, completed, pending: this.tasks.length - completed, todo, inProgress };
                 },
                 get todaySchedules() {
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = new Date().toLocaleDateString('en-CA');
                     return this.schedules
-                        .filter(s => s.start_time && s.start_time.startsWith(today))
+                        .filter(s => {
+                            if (!s.start_time) return false;
+                            const datePart = s.start_time.split('T')[0];
+                            return datePart === today;
+                        })
                         .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
                 },
                 formatTime(datetime) {
@@ -226,8 +230,18 @@
                         .then(data => {
                             this.schedules = data.schedules || [];
                             this.generating = false;
-                            this.successMsg = `Planning généré : ${data.schedules?.length || 0} créneau(x) planifié(s).`;
-                            setTimeout(() => this.successMsg = '', 4000);
+                            
+                            const today = new Date().toLocaleDateString('en-CA');
+                            const todayCount = (data.schedules || []).filter(s => s.start_time && s.start_time.startsWith(today)).length;
+                            const totalCount = data.schedules?.length || 0;
+                            
+                            if (totalCount > 0 && todayCount === 0) {
+                                this.successMsg = `Planning généré : ${totalCount} tâche(s) planifiée(s) pour demain ou les jours suivants ! Visitez l'onglet "Calendrier" pour les consulter.`;
+                            } else {
+                                this.successMsg = `Planning généré : ${totalCount} créneau(x) planifié(s) avec succès !`;
+                            }
+                            
+                            setTimeout(() => this.successMsg = '', 6000);
                         })
                         .catch(err => {
                             this.generating = false;

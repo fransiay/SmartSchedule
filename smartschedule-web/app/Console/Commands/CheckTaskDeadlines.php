@@ -20,7 +20,7 @@ use Illuminate\Console\Command;
 class CheckTaskDeadlines extends Command
 {
     protected $signature = 'tasks:check-deadlines {--user= : ID d\'un utilisateur spécifique (optionnel)}';
-    protected $description = 'Vérifie les échéances des tâches et envoie des rappels (J-1 uniquement)';
+    protected $description = 'Vérifie les échéances et envoie des rappels uniquement à J-1';
 
     public function handle(): int
     {
@@ -44,13 +44,14 @@ class CheckTaskDeadlines extends Command
                 $notification = $this->buildReminder($task);
                 if (!$notification) continue;
 
-                // Anti-spam : vérifier qu'on n'a pas déjà notifié pour cette tâche récemment
+                // Anti-spam : vérifier qu'on n'a pas déjà notifié pour cette tâche dans les dernières 24h
                 $alreadySent = $user->notifications()
-                    ->where('created_at', '>=', Carbon::now()->subHours(12))
+                    ->where('created_at', '>=', Carbon::now()->subHours(24))
                     ->get()
-                    ->contains(function ($n) use ($task, $notification) {
-                        return ($n->data['task_id'] ?? null) == $task->id
-                            && ($n->data['reminder_type'] ?? null) === $notification['reminder_type'];
+                    ->contains(function ($n) use ($task) {
+                        $data = is_array($n->data) ? $n->data : json_decode($n->data, true);
+                        return ($data['task_id'] ?? null) == $task->id
+                            && ($data['reminder_type'] ?? null) === 'tomorrow';
                     });
 
                 if ($alreadySent) continue;
@@ -59,7 +60,7 @@ class CheckTaskDeadlines extends Command
                     $task,
                     $notification['message'],
                     $notification['type'],
-                    $notification['reminder_type']
+                    'tomorrow'
                 ));
                 $totalNotifs++;
             }
@@ -70,7 +71,7 @@ class CheckTaskDeadlines extends Command
     }
 
     /**
-     * Détermine le message de rappel (Uniquement pour J-1).
+     * Détermine le message de rappel (Uniquement J-1).
      */
     private function buildReminder(Task $task): ?array
     {
@@ -84,15 +85,14 @@ class CheckTaskDeadlines extends Command
         ];
         $statusText = $statusLabels[$task->status] ?? $task->status;
 
-        // Rappel uniquement pour demain (J-1)
+        // On ne garde QUE le rappel pour demain (J-1)
         if ($diff === 1) {
             return [
                 'message'       => "🔔 Rappel : La tâche « {$task->title} » expire demain. Statut : {$statusText}.",
                 'type'          => 'warning',
-                'reminder_type' => 'tomorrow',
             ];
         }
 
-        return null; // Pas de rappel nécessaire pour les autres cas
+        return null;
     }
 }

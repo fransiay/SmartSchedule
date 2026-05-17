@@ -52,7 +52,7 @@ class TaskNotification extends Notification
         try {
             Http::post('https://exp.host/--/api/v2/push/send', [
                 'to'    => $token,
-                'title' => 'SmartSchedule Update',
+                'title' => 'Rappel de tâche',
                 'body'  => $this->message,
                 'data'  => [
                     'task_id' => $this->task->id,

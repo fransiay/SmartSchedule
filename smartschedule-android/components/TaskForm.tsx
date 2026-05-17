@@ -41,7 +41,7 @@ export default function TaskForm({ task, onSuccess }: TaskFormProps) {
             description,
             duration_minutes: parseInt(duration),
             priority,
-            deadline: deadline + ' 00:00:00',
+            deadline: deadline + ' 23:59:59',
             category_id: categoryId || null,
             status: task?.status || 'todo'
         };

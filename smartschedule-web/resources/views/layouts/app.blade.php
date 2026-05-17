@@ -341,7 +341,13 @@
                         })
                         .then(r => r.json())
                         .then(data => {
-                            this.notifications = Array.isArray(data) ? data : [];
+                            this.notifications = (Array.isArray(data) ? data : []).map(n => {
+                                // Sécurité : s'assurer que data est un objet
+                                if (typeof n.data === 'string') {
+                                    try { n.data = JSON.parse(n.data); } catch(e) {}
+                                }
+                                return n;
+                            });
                             this.count = this.notifications.filter(n => n.read_at === null).length;
                         })
                         .catch(() => {})
@@ -349,20 +355,23 @@
                     },
 
                     handleClick(n) {
+                        const targetUrl = n.data?.action || '/tasks';
+                        
                         // Marquer comme lu
                         if (!n.read_at) {
+                            n.read_at = new Date().toISOString();
+                            this.count = Math.max(0, this.count - 1);
+                            
                             fetch(`/web-api/notifications/${n.id}/read`, {
                                 method: 'POST',
                                 credentials: 'same-origin',
                                 headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
                             });
-                            n.read_at = new Date().toISOString();
-                            this.count = Math.max(0, this.count - 1);
                         }
-                        // Naviguer vers la page concernée
+                        
+                        // Naviguer
                         this.open = false;
-                        const action = n.data?.action || '/tasks';
-                        window.location.href = action;
+                        window.location.href = targetUrl;
                     },
 
                     markAllRead() {
@@ -376,7 +385,7 @@
                     },
 
                     typeEmoji(type) {
-                        return { success: '✅', info: 'ℹ️', warning: '⚠️', error: '❌' }[type] || '🔔';
+                        return { success: '✅', info: 'ℹ️', warning: '⚠️', error: '🚨' }[type] || '🔔';
                     },
 
                     typeColor(type, opacity) {
@@ -390,7 +399,8 @@
                         const now = new Date();
                         const d = new Date(dateStr);
                         const diffS = Math.floor((now - d) / 1000);
-                        if (diffS < 60)   return "à l'instant";
+                        if (diffS < 5)    return "à l'instant";
+                        if (diffS < 60)   return diffS + ' s';
                         if (diffS < 3600) return Math.floor(diffS / 60) + ' min';
                         if (diffS < 86400) return Math.floor(diffS / 3600) + ' h';
                         const days = Math.floor(diffS / 86400);
