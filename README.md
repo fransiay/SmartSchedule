@@ -7,7 +7,6 @@ lien de l'application web : https://neo-solution.fr/
 > Gérez vos tâches, définissez vos disponibilités, générez automatiquement un planning optimisé et recevez des notifications intelligentes.
 
 
-
 ## Table des matières
 
 - [Aperçu](#aperçu)
@@ -16,11 +15,9 @@ lien de l'application web : https://neo-solution.fr/
 - [Installation & Configuration](#installation--configuration)
 - [Usage](#usage)
 - [API REST (Laravel)](#api-rest-laravel)
-- [Modèle de données (UML)](#modèle-de-données-uml)
-- [Tests & CI](#tests--ci)
 - [Déploiement](#déploiement)
 - [Contributions](#contributions)
-- [Licence](#licence)
+
 
 
 ## Aperçu
@@ -41,39 +38,10 @@ SmartSchedule combine une **interface web** (React + Vite) et une **applicat
 | 🔔 | Notifications push (Expo) et notifications in‑app (broadcast) |
 | 📅 | Vue calendrier interactif (drag‑&‑drop, mise à jour du statut) |
 | ⏰ | Cron / Scheduler pour les rappels de deadline |
-| 🧪 | Tests unitaires et d’intégration (PHPUnit, Jest) |
 
 
 
 ## Architecture
-
-```mermaid
-flowchart LR
-    subgraph FrontendWeb [Web (React + Vite)]
-        UI[UI Components]
-        Store[State Store]
-        API[Axios Calls]
-    end
-
-    subgraph FrontendMobile [Mobile (React‑Native + Expo)]
-        UI_M[UI Components]
-        Store_M[Redux / Context]
-        API_M[Axios Calls]
-    end
-
-    subgraph Backend [Laravel API]
-        Controllers[Controllers]
-        Services[Services (Planning Engine)]
-        Jobs[Jobs & Commands]
-        Models[Eloquent Models]
-        DB[(MySQL Database)]
-    end
-
-    UI --> API --> Controllers --> Services --> DB
-    UI_M --> API_M --> Controllers
-    Jobs --> Services
-    Notifications --> Users
-```
 
 - **Frontend** utilise **Axios** pour consommer l’API Laravel.  
 - **Backend** expose des routes REST, utilise **Eloquent** pour le mapping ORM, et un **Job** (`ScheduleGenerationJob`) pour le calcul du planning.  
@@ -88,8 +56,7 @@ flowchart LR
 - **Node.js** ≥ 18
 - **PHP** ≥ 8.2 avec extensions `pdo_mysql`, `mbstring`, `openssl`
 - **Composer**
-- **MySQL** 8.x (ou MariaDB compatible) 
-- **Docker** (optionnel, pour le développement rapide)  
+- **MySQL** 
 
 ### 1. Clone du dépôt
 ```bash
@@ -119,7 +86,7 @@ npm run dev   # http://localhost:5173
 ```bash
 cd ../../smartschedule-android
 npm install
-npx expo start   # Choisir un simulateur ou votre appareil
+npx expo start  
 ```
 
 ###  Configuration du Cron (Linux/macOS) – Windows
@@ -159,71 +126,6 @@ Programmez‑le chaque heure.
 
 > **Note** : toutes les routes sont protégées par le middleware `auth:sanctum`.
 
-
-
-## Modèle de données (UML)
-### Diagramme de classes
-```mermaid
-classDiagram
-    class User {
-        +int id
-        +string name
-        +string email
-        +string password
-        +string preferred_hours
-        +int break_duration
-        +datetime created_at
-        +datetime updated_at
-        --
-        +authenticate() boolean
-        +generateSchedule() void
-        +getAnalytics() json
-    }
-    class Category { ... }
-    class Task { ... }
-    class TaskAttachment { ... }
-    class Availability { ... }
-    class Schedule { ... }
-    class Notification { ... }
-    User "1" *-- "0..*" Category
-    User "1" *-- "0..*" Task
-    User "1" *-- "0..*" Availability
-    User "1" *-- "0..*" Schedule
-    User "1" *-- "0..*" Notification
-    Category "1" *-- "0..*" Task
-    Task "1" -- "0..1" Schedule
-    Task "1" *-- "0..*" TaskAttachment
-    Task "1" *-- "0..*" Task : generates (recurrence)
-    Notification "1" -- "0..1" Task
-    Notification "1" -- "0..1" Schedule
-```
-
-### Diagramme de séquence (Génération du planning)
-```mermaid
-sequenceDiagram
-    actor U as Utilisateur
-    participant M as App (Web/Mobile)
-    participant A as API Laravel
-    participant E as Engine d'optimisation
-    participant D as Base de données
-    U->>M: Clique "Générer le planning"
-    M->>A: POST /api/schedule/generate
-    A->>D: SELECT tasks (status=todo)
-    A->>D: SELECT availabilities (active)
-    A->>E: optimise(tasks, availabilities)
-    alt Succès
-        E-->>A: schedules[]
-        A->>D: DELETE schedules WHERE user_id=?
-        A->>D: INSERT schedules
-        A-->>M: {schedules, success:true}
-    else Partiel
-        E-->>A: {schedules, warnings, unscheduled}
-        A-->>M: {schedules, warnings}
-    end
-```
-
-
-
 ## Tests & CI
 - **Backend** : `php artisan test` (PHPUnit) – couvre les contrôleurs, les jobs et les policies.
 - **Frontend** : `npm run test` (Jest + React Testing Library) – tests unitaires et snapshots UI.
@@ -232,7 +134,6 @@ sequenceDiagram
 ---
 ## Déploiement
 1. **Provisionner** sur un hébergeur  (Hostinger).  
-2. **Installer** Docker et Docker‑Compose :
 
 ```yaml
 version: '3'
@@ -268,11 +169,6 @@ services:
 - PHP : **PSR‑12** + **PHPStan** level max.  
 - JavaScript/TypeScript : **ESLint** + **Prettier** (config `airbnb`).  
 - Markdown : titres en **PascalCase**, listes à puces, images hébergées via le repo `screenshots/`.
-
-
-
-## Licence
-Ce projet est sous licence **MIT** – vous êtes libre de réutiliser, modifier et distribuer le code, à condition de conserver le copyright et la notice de licence.
 
 
 *© 2026 SmartSchedule – Développé par Siangany fransia .*
